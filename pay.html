@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>지각비 결제 안내</title>
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      padding: 20px;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #4e9a06;
+      text-align: center;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+    }
+    .payment-info {
+      background-color: #e9f5e9;
+      padding: 20px;
+      border-radius: 10px;
+      border: 2px solid #4e9a06;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .payment-info p {
+      font-size: 1.2em;
+    }
+    button {
+      background-color: #4e9a06;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #3b7a02;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>지각비 결제 안내</h1>
+
+  <div class="payment-info">
+    <h2>결제 계좌 정보</h2>
+    <p>계좌명: 홍길동 (카카오뱅크)</p>
+    <p>계좌번호: 123-456-7890</p>
+    <p>입금 금액: 500원 / 1000원 / 1500원</p>
+    <p>결제 후 아래 버튼을 클릭하여 결제 확인을 해주세요.</p>
+  </div>
+
+  <button onclick="checkPayment()">결제 확인</button>
+
+  <script>
+    // GitHub Gist API 설정
+    const GIST_ID = "your-gist-id";  // Gist ID를 여기에 넣어주세요
+    const GITHUB_TOKEN = "your-personal-access-token";  // GitHub Personal Access Token을 여기에 넣어주세요
+
+    function checkPayment() {
+      const isPaid = confirm("입금이 완료되었나요? 확인 후 '확인' 버튼을 눌러주세요.");
+      if (isPaid) {
+        const name = "홍길동";  // 예시 이름, 실제로는 사용자 정보 필요
+        const fee = 500;  // 예시 금액, 실제로는 결제 금액 필요
+        const transactionId = "txn-001";  // 예시 거래 ID, 실제로는 송금 시 거래 ID 필요
+        
+        // 결제 내역을 GitHub Gist에 저장
+        savePaymentToGist(name, fee, transactionId);
+
+        alert("결제가 확인되었습니다. 감사합니다!");
+      } else {
+        alert("결제를 완료한 후 다시 시도해주세요.");
+      }
+    }
+
+    // GitHub Gist에 결제 내역 저장
+    function savePaymentToGist(name, fee, transactionId) {
+      const paymentData = {
+        name: name,
+        fee: fee,
+        transactionId: transactionId,
+        status: '완료',
+      };
+
+      // 기존 Gist 데이터 불러오기
+      fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+        }
+      })
+      .then(response => response.json())
+      .then(gist => {
+        // Gist 내용에 결제 내역 추가
+        const gistContent = gist.files['payment_list.json'].content;
+        const paymentList = JSON.parse(gistContent);
+        paymentList.push(paymentData);
+
+        // 결제 내역을 Gist에 업데이트
+        fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            files: {
+              'payment_list.json': {
+                content: JSON.stringify(paymentList, null, 2),
+              }
+            }
+          })
+        })
+        .then(() => console.log('결제 내역이 Gist에 저장되었습니다.'))
+        .catch(err => console.error('Gist 업데이트 실패:', err));
+      })
+      .catch(err => console.error('Gist 불러오기 실패:', err));
+    }
+  </script>
+
+</body>
+</html>
