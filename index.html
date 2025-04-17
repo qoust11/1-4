@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>지각비 리스트</title>
+  <title>학급비 리스트</title>
   <style>
     body {
       font-family: 'Courier New', Courier, monospace;  /* 손글씨 느낌 */
@@ -91,11 +91,29 @@
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
       border: 2px solid #4e9a06;
     }
+    .date-time {
+      font-size: 1.2em;
+      color: #4e9a06;
+      margin-top: 20px;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+    }
+    /* 시간표 이미지 스타일 */
+    #timetableImage {
+      width: 100%;
+      max-width: 800px;
+      height: auto;
+      display: block;
+      margin: 20px 0;
+    }
   </style>
 </head>
 <body>
 
   <h1>지각비 리스트</h1>
+
+  <!-- 시간표 이미지 -->
+  <img id="timetableImage" src="시간표.jpg" alt="시간표 이미지" />
 
   <!-- 로그인 섹션 -->
   <div id="authSection" class="chalkboard">
@@ -110,6 +128,9 @@
     <h3>환영합니다, <span id="userDisplay"></span>님!</h3>
     <button onclick="logout()">로그아웃</button>
   </div>
+
+  <!-- 날짜 및 시간 -->
+  <div id="dateTime" class="date-time"></div>
 
   <!-- 지각비 리스트는 항상 보임 -->
   <h3>지각비 리스트</h3>
@@ -232,9 +253,25 @@
       renderList();
     }
 
+    // 날짜와 시간 표시 함수
+    function updateDateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const weekday = ["일", "월", "화", "수", "목", "금", "토"][now.getDay()];
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+
+      const dateTimeStr = `${year}년 ${month}월 ${day}일 (${weekday}) ${hours}:${minutes}:${seconds}`;
+      document.getElementById("dateTime").textContent = dateTimeStr;
+    }
+
     // 초기 실행
     initList();
     renderList();
+    setInterval(updateDateTime, 1000);  // 1초마다 업데이트
   </script>
 
 </body>
