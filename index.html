@@ -2,10 +2,10 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>학급비 리스트</title>
+  <title>지각비 리스트</title>
   <style>
     body {
-      font-family: 'Courier New', Courier, monospace;  /* 손글씨 느낌 */
+      font-family: 'Courier New', Courier, monospace;
       padding: 20px;
       background-color: #f4f4f9;
       color: #333;
@@ -14,7 +14,6 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
     }
     h1 {
       font-size: 2.5em;
@@ -27,84 +26,60 @@
     .hidden {
       display: none;
     }
-    input {
-      margin: 10px;
-      padding: 8px;
-      font-size: 1.2em;
-      border: 2px solid #4e9a06;
+    input, button {
+      margin: 5px;
+      padding: 10px;
+      font-size: 1.1em;
       border-radius: 5px;
-      background-color: #fff;
-      color: #333;
-      transition: 0.3s;
     }
-    input:focus {
-      border-color: #2e6a00;
+    input {
+      border: 2px solid #4e9a06;
     }
     button {
       background-color: #4e9a06;
       color: white;
       border: none;
-      border-radius: 5px;
-      padding: 10px 20px;
-      margin: 5px;
-      font-size: 1.1em;
       cursor: pointer;
-      transition: 0.3s;
       font-family: 'Comic Sans MS', cursive, sans-serif;
     }
     button:hover {
       background-color: #3b7a02;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    button:focus {
-      outline: none;
-      background-color: #2e6a00;
     }
     ul {
       list-style: none;
       padding: 0;
       width: 100%;
       max-width: 600px;
-      margin-top: 30px;
     }
     li {
-      font-size: 1.5em;
-      background: #ffffff;
+      font-size: 1.2em;
+      background: #fff;
       padding: 15px;
       margin: 10px 0;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      transition: 0.3s;
-    }
-    li:hover {
-      background: #f0f0f0;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
     }
     .chalkboard {
       background-color: #2f3e46;
       border-radius: 10px;
-      padding: 30px;
+      padding: 20px;
       margin-top: 30px;
       width: 100%;
-      max-width: 800px;
+      max-width: 600px;
       color: #e9e9e9;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
       border: 2px solid #4e9a06;
     }
-    .date-time {
-      font-size: 1.2em;
-      color: #4e9a06;
-      margin-top: 20px;
-      font-family: 'Comic Sans MS', cursive, sans-serif;
-      text-align: center;
-    }
-    /* 시간표 이미지 스타일 */
     #timetableImage {
       width: 100%;
       max-width: 800px;
       height: auto;
-      display: block;
       margin: 20px 0;
+    }
+    .date-time {
+      font-size: 1em;
+      margin-top: 10px;
+      color: #4e9a06;
+      font-family: 'Comic Sans MS', cursive;
     }
   </style>
 </head>
@@ -112,10 +87,8 @@
 
   <h1>지각비 리스트</h1>
 
-  <!-- 시간표 이미지 -->
   <img id="timetableImage" src="시간표.jpg" alt="시간표 이미지" />
 
-  <!-- 로그인 섹션 -->
   <div id="authSection" class="chalkboard">
     <h3>로그인</h3>
     <input type="text" id="loginId" placeholder="ID 입력" />
@@ -123,46 +96,42 @@
     <button onclick="login()">로그인</button>
   </div>
 
-  <!-- 로그인 정보 -->
   <div id="loginInfo" class="hidden">
     <h3>환영합니다, <span id="userDisplay"></span>님!</h3>
     <button onclick="logout()">로그아웃</button>
   </div>
 
-  <!-- 날짜 및 시간 -->
   <div id="dateTime" class="date-time"></div>
 
-  <!-- 지각비 리스트는 항상 보임 -->
   <h3>지각비 리스트</h3>
   <ul id="feeList"></ul>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
   <script>
+    // ✅ 여기에 너의 Firebase 설정을 붙여 넣어야 함!
+    const firebaseConfig = {
+  apiKey: "AIzaSyCn6ZiB7fnSw_c0R0eR1UQQNPEl8r-65fo",
+  authDomain: "pay-deac3.firebaseapp.com",
+  databaseURL: "https://pay-deac3-default-rtdb.firebaseio.com",
+  projectId: "pay-deac3",
+  storageBucket: "pay-deac3.firebasestorage.app",
+  messagingSenderId: "870353704420",
+  appId: "1:870353704420:web:8ef70e2cb03eea55afe3f1"
+    };
+
+    // Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     const ADMIN_ID = "admin";
     const ADMIN_PW = "091111";
     let isLoggedIn = false;
+    let feeList = [];
 
-    function initList() {
-      let list = JSON.parse(localStorage.getItem("feeList") || "[]");
-      if (list.length !== 18) {
-        list = Array.from({ length: 18 }, (_, i) => ({
-          name: `${i + 1}번`,
-          fee: 0,
-          swears: 0,
-          lates: 0
-        }));
-        localStorage.setItem("feeList", JSON.stringify(list));
-      } else {
-        // 기존 리스트에 swears, lates 누락 시 추가
-        list = list.map(entry => ({
-          name: entry.name || "이름없음",
-          fee: entry.fee ?? 0,
-          swears: entry.swears ?? 0,
-          lates: entry.lates ?? 0
-        }));
-        localStorage.setItem("feeList", JSON.stringify(list));
-      }
-    }
-
+    // 로그인
     function login() {
       const id = document.getElementById("loginId").value.trim();
       const pw = document.getElementById("loginPw").value.trim();
@@ -178,6 +147,7 @@
       }
     }
 
+    // 로그아웃
     function logout() {
       isLoggedIn = false;
       document.getElementById("authSection").classList.remove("hidden");
@@ -185,38 +155,47 @@
       renderList();
     }
 
+    // 리스트 불러오기
+    function fetchList() {
+      db.ref("feeList").once("value").then(snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          feeList = data;
+        } else {
+          // 초기 리스트 생성 (18명)
+          feeList = Array.from({ length: 18 }, (_, i) => ({
+            name: `${i + 1}번`,
+            fee: 0,
+            swears: 0,
+            lates: 0
+          }));
+          db.ref("feeList").set(feeList);
+        }
+        renderList();
+      });
+    }
+
+    // 리스트 렌더링
     function renderList() {
-      const list = JSON.parse(localStorage.getItem("feeList") || "[]");
       const ul = document.getElementById("feeList");
       ul.innerHTML = "";
 
-      list.forEach((entry, index) => {
-        // 안전한 값 보정
-        entry.fee = entry.fee ?? 0;
-        entry.swears = entry.swears ?? 0;
-        entry.lates = entry.lates ?? 0;
-
+      feeList.forEach((entry, index) => {
         const li = document.createElement("li");
-        li.textContent = `${entry.name}: ${entry.fee.toLocaleString()}원 (욕 횟수: ${entry.swears}, 지각 횟수: ${entry.lates})`;
+        li.textContent = `${entry.name}: ${entry.fee.toLocaleString()}원 (욕: ${entry.swears}, 지각: ${entry.lates})`;
 
         if (isLoggedIn) {
           const btn500 = document.createElement("button");
           btn500.textContent = "+500";
-          btn500.onclick = () => {
-            addFee(index, 500);
-          };
+          btn500.onclick = () => updateFee(index, 500);
 
           const btn1000 = document.createElement("button");
           btn1000.textContent = "+1000";
-          btn1000.onclick = () => {
-            addFee(index, 1000);
-          };
+          btn1000.onclick = () => updateFee(index, 1000);
 
           const resetBtn = document.createElement("button");
           resetBtn.textContent = "초기화";
-          resetBtn.onclick = () => {
-            resetEntry(index);
-          };
+          resetBtn.onclick = () => resetEntry(index);
 
           li.appendChild(btn500);
           li.appendChild(btn1000);
@@ -227,52 +206,37 @@
       });
     }
 
-    function addFee(index, amount) {
-      const list = JSON.parse(localStorage.getItem("feeList") || "[]");
-      const entry = list[index];
+    function updateFee(index, amount) {
+      if (!feeList[index]) return;
 
-      entry.fee = entry.fee ?? 0;
-      entry.swears = entry.swears ?? 0;
-      entry.lates = entry.lates ?? 0;
+      feeList[index].fee += amount;
+      if (amount === 500) feeList[index].swears++;
+      if (amount === 1000) feeList[index].lates++;
 
-      entry.fee += amount;
-      if (amount === 500) entry.swears++;
-      if (amount === 1000) entry.lates++;
-
-      list[index] = entry;
-      localStorage.setItem("feeList", JSON.stringify(list));
+      db.ref("feeList").set(feeList);
       renderList();
     }
 
     function resetEntry(index) {
-      const list = JSON.parse(localStorage.getItem("feeList") || "[]");
-      list[index].fee = 0;
-      list[index].swears = 0;
-      list[index].lates = 0;
-      localStorage.setItem("feeList", JSON.stringify(list));
+      if (!feeList[index]) return;
+
+      feeList[index].fee = 0;
+      feeList[index].swears = 0;
+      feeList[index].lates = 0;
+
+      db.ref("feeList").set(feeList);
       renderList();
     }
 
-    // 날짜와 시간 표시 함수
     function updateDateTime() {
       const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-      const day = now.getDate();
-      const weekday = ["일", "월", "화", "수", "목", "금", "토"][now.getDay()];
-      const hours = String(now.getHours()).padStart(2, "0");
-      const minutes = String(now.getMinutes()).padStart(2, "0");
-      const seconds = String(now.getSeconds()).padStart(2, "0");
-
-      const dateTimeStr = `${year}년 ${month}월 ${day}일 (${weekday}) ${hours}:${minutes}:${seconds}`;
-      document.getElementById("dateTime").textContent = dateTimeStr;
+      const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${["일","월","화","수","목","금","토"][now.getDay()]}) ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
+      document.getElementById("dateTime").textContent = dateStr;
     }
 
-    // 초기 실행
-    initList();
-    renderList();
-    setInterval(updateDateTime, 1000);  // 1초마다 업데이트
+    // 시작
+    fetchList();
+    setInterval(updateDateTime, 1000);
   </script>
-
 </body>
 </html>
