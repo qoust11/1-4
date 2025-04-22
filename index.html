@@ -140,7 +140,7 @@
       const today = new Date();
       const yyyymmdd = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
 
-      fetch(`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${API_KEY}&ATPT_OFCDC_SC_CODE=${EDUCODE}&SD_SCHUL_CODE=${SCHOOLCODE}&MLSV_YMD=${yyyymmdd}&Type=json`)
+      fetch(`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${2bddf77f9e10424a86e5a6e8f608b06b}&ATPT_OFCDC_SC_CODE=${J10}&SD_SCHUL_CODE=${B000013051}&MLSV_YMD=${yyyymmdd}&Type=json`)
         .then(res => res.json())
         .then(data => {
           const meal = data?.mealServiceDietInfo?.find(x => x.row)?.row?.[0]?.DDISH_NM;
