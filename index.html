@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>지각비 리스트</title>
+  <title>학급비 리스트</title>
   <style>
     body {
       font-family: 'Courier New', Courier, monospace;
@@ -10,7 +10,6 @@
       background-color: #f4f4f9;
       color: #333;
       margin: 0;
-      height: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -23,27 +22,34 @@
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
       font-family: 'Comic Sans MS', cursive, sans-serif;
     }
-    .hidden {
-      display: none;
-    }
-    input, button {
-      margin: 5px;
-      padding: 10px;
-      font-size: 1.1em;
-      border-radius: 5px;
+    .chalkboard {
+      background-color: #2f3e46;
+      border-radius: 10px;
+      padding: 30px;
+      margin-top: 30px;
+      width: 100%;
+      max-width: 800px;
+      color: #e9e9e9;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      border: 2px solid #4e9a06;
     }
     input {
+      margin: 10px;
+      padding: 8px;
+      font-size: 1.2em;
       border: 2px solid #4e9a06;
+      border-radius: 5px;
     }
     button {
       background-color: #4e9a06;
       color: white;
       border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 1.1em;
       cursor: pointer;
       font-family: 'Comic Sans MS', cursive, sans-serif;
-    }
-    button:hover {
-      background-color: #3b7a02;
     }
     ul {
       list-style: none;
@@ -52,42 +58,37 @@
       max-width: 600px;
     }
     li {
-      font-size: 1.2em;
+      font-size: 1.5em;
       background: #fff;
       padding: 15px;
       margin: 10px 0;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    .chalkboard {
-      background-color: #2f3e46;
-      border-radius: 10px;
-      padding: 20px;
-      margin-top: 30px;
-      width: 100%;
-      max-width: 600px;
-      color: #e9e9e9;
-      border: 2px solid #4e9a06;
-    }
     #timetableImage {
       width: 100%;
       max-width: 800px;
-      height: auto;
       margin: 20px 0;
     }
-    .date-time {
-      font-size: 1em;
-      margin-top: 10px;
+    .date-time, .meal-box {
+      font-size: 1.2em;
       color: #4e9a06;
-      font-family: 'Comic Sans MS', cursive;
+      margin: 10px 0;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+    }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
 
   <h1>지각비 리스트</h1>
-
   <img id="timetableImage" src="시간표.jpg" alt="시간표 이미지" />
+
+  <div id="dateTime" class="date-time"></div>
+  <div id="mealBox" class="meal-box">급식 정보를 불러오는 중...</div>
 
   <div id="authSection" class="chalkboard">
     <h3>로그인</h3>
@@ -101,37 +102,61 @@
     <button onclick="logout()">로그아웃</button>
   </div>
 
-  <div id="dateTime" class="date-time"></div>
-
-  <h3>지각비 리스트</h3>
   <ul id="feeList"></ul>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getDatabase, ref, get, set, update } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-database.js";
 
-  <script>
-    // ✅ 여기에 너의 Firebase 설정을 붙여 넣어야 함!
     const firebaseConfig = {
-  apiKey: "AIzaSyCn6ZiB7fnSw_c0R0eR1UQQNPEl8r-65fo",
-  authDomain: "pay-deac3.firebaseapp.com",
-  databaseURL: "https://pay-deac3-default-rtdb.firebaseio.com",
-  projectId: "pay-deac3",
-  storageBucket: "pay-deac3.firebasestorage.app",
-  messagingSenderId: "870353704420",
-  appId: "1:870353704420:web:8ef70e2cb03eea55afe3f1"
+      apiKey: "AIzaSyCn6ZiB7fnSw_c0R0eR1UQQNPEl8r-65fo",
+      authDomain: "pay-deac3.firebaseapp.com",
+      databaseURL: "https://pay-deac3-default-rtdb.firebaseio.com",
+      projectId: "pay-deac3",
+      storageBucket: "pay-deac3.firebasestorage.app",
+      messagingSenderId: "870353704420",
+      appId: "1:870353704420:web:8ef70e2cb03eea55afe3f1"
     };
 
-    // Firebase 초기화
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
     const ADMIN_ID = "admin";
     const ADMIN_PW = "091111";
     let isLoggedIn = false;
     let feeList = [];
 
-    // 로그인
+    function updateDateTime() {
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${["일","월","화","수","목","금","토"][now.getDay()]}) ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+      document.getElementById("dateTime").textContent = dateStr;
+    }
+
+    function fetchMeal() {
+      const API_KEY = "2bddf77f9e10424a86e5a6e8f608b06b"; // 네이스 API 키
+      const EDUCODE = "J10";
+      const SCHOOLCODE = "B000013051";
+      const today = new Date();
+      const yyyymmdd = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+
+      fetch(`https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=${API_KEY}&ATPT_OFCDC_SC_CODE=${EDUCODE}&SD_SCHUL_CODE=${SCHOOLCODE}&MLSV_YMD=${yyyymmdd}&Type=json`)
+        .then(res => res.json())
+        .then(data => {
+          const meal = data?.mealServiceDietInfo?.find(x => x.row)?.row?.[0]?.DDISH_NM;
+          const mealBox = document.getElementById("mealBox");
+          if (meal) {
+            mealBox.innerHTML = meal.replace(/<br\/?>/g, "<br>").replace(/\./g, "");
+          } else {
+            mealBox.innerHTML = "오늘은 급식이 없어요.";
+          }
+        })
+        .catch(err => {
+          document.getElementById("mealBox").innerText = "급식을 불러오는 데 실패했어요.";
+          console.error("급식 API 오류:", err);
+        });
+    }
+
     function login() {
       const id = document.getElementById("loginId").value.trim();
       const pw = document.getElementById("loginPw").value.trim();
@@ -147,7 +172,6 @@
       }
     }
 
-    // 로그아웃
     function logout() {
       isLoggedIn = false;
       document.getElementById("authSection").classList.remove("hidden");
@@ -155,27 +179,6 @@
       renderList();
     }
 
-    // 리스트 불러오기
-    function fetchList() {
-      db.ref("feeList").once("value").then(snapshot => {
-        const data = snapshot.val();
-        if (data) {
-          feeList = data;
-        } else {
-          // 초기 리스트 생성 (18명)
-          feeList = Array.from({ length: 18 }, (_, i) => ({
-            name: `${i + 1}번`,
-            fee: 0,
-            swears: 0,
-            lates: 0
-          }));
-          db.ref("feeList").set(feeList);
-        }
-        renderList();
-      });
-    }
-
-    // 리스트 렌더링
     function renderList() {
       const ul = document.getElementById("feeList");
       ul.innerHTML = "";
@@ -207,36 +210,42 @@
     }
 
     function updateFee(index, amount) {
-      if (!feeList[index]) return;
-
-      feeList[index].fee += amount;
-      if (amount === 500) feeList[index].swears++;
-      if (amount === 1000) feeList[index].lates++;
-
-      db.ref("feeList").set(feeList);
+      const entry = feeList[index];
+      entry.fee += amount;
+      if (amount === 500) entry.swears++;
+      if (amount === 1000) entry.lates++;
+      update(ref(db, `fees/${index}`), entry);
       renderList();
     }
 
     function resetEntry(index) {
-      if (!feeList[index]) return;
-
-      feeList[index].fee = 0;
-      feeList[index].swears = 0;
-      feeList[index].lates = 0;
-
-      db.ref("feeList").set(feeList);
+      const entry = { ...feeList[index], fee: 0, swears: 0, lates: 0 };
+      feeList[index] = entry;
+      set(ref(db, `fees/${index}`), entry);
       renderList();
     }
 
-    function updateDateTime() {
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${["일","월","화","수","목","금","토"][now.getDay()]}) ${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
-      document.getElementById("dateTime").textContent = dateStr;
+    async function loadFeeList() {
+      const snap = await get(ref(db, "fees"));
+      if (!snap.exists()) {
+        feeList = Array.from({ length: 18 }, (_, i) => ({
+          name: `${i + 1}번`,
+          fee: 0,
+          swears: 0,
+          lates: 0
+        }));
+        feeList.forEach((entry, i) => set(ref(db, `fees/${i}`), entry));
+      } else {
+        feeList = Object.values(snap.val());
+      }
+      renderList();
     }
 
-    // 시작
-    fetchList();
+    // 초기 실행
+    updateDateTime();
     setInterval(updateDateTime, 1000);
+    fetchMeal();
+    loadFeeList();
   </script>
 </body>
 </html>
